@@ -8,10 +8,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agomezmoron/cordova-save-image-gallery.git"
+    "url": "git+https://github.com/bulangnisi/cordova-save-image-gallery.git"
   },
   "bugs": {
-    "url": "https://github.com/agomezmoron/cordova-save-image-gallery/issues"
+    "url": "https://github.com/bulangnisi/cordova-save-image-gallery/issues"
   },
   "engines": [
     {
@@ -43,32 +43,11 @@
     "cordova-wp8"
   ],
   "author": {
-    "name": "Alejandro Gomez",
-    "email": "agommor@gmail.com",
-    "url": "http://github.com/agomezmoron"
+    "name": "Ben J",
+    "email": "bulangnisi@gmail.com",
+    "url": "http://github.com/bulangnisi"
   },
-  "contributors": [
-    {
-      "name": "Ignacio Gonzalez",
-      "email": "natete981@gmail.com",
-      "url": "http://github.com/agomezmoron"
-    },
-    {
-      "name": "StefanoMagrassi",
-      "email": "stefano.magrassi@gmail.com",
-      "url": "http://thinkwritedone.com"
-    },
-    {
-      "name": "Simba Zhang",
-      "email": "solderzzc@gmail.com",
-      "url": "http://www.tiegushi.com"
-    },
-    {
-      "name": "Bastian Meier",
-      "email": "post@bastianmeier.de",
-      "url": "http://github.com/bastian-meie"
-    }
-  ],
+  "contributors": [],
   "devDependencies": {
     "eslint": "1.10.3",
     "nodemsg": "1.0.0"
