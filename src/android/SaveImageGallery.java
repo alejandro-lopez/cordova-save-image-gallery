@@ -1,6 +1,7 @@
 package com.agomezmoron.saveImageGallery;
-
+import android.content.Context;
 import java.io.File;
+import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.util.Calendar;
 import java.util.Arrays;
@@ -23,6 +24,10 @@ import android.os.Build;
 import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
+
+import android.content.ContentValues;
+import android.provider.MediaStore;
+import android.content.ContentResolver;
 
 /**
  * SaveImageGallery.java
@@ -58,6 +63,9 @@ public class SaveImageGallery extends CordovaPlugin {
             this.removeImage(args, callbackContext);
         }
         else {
+            System.out.println("===============");
+            System.out.println("SDKVersion 当前系统的SDK版本为：" + Build.VERSION.SDK_INT);
+            System.out.println("======== has permissions WRITE_EXTERNAL_STORAGE" +PermissionHelper.hasPermission(this, WRITE_EXTERNAL_STORAGE));
             this._args = args;
             this._callback = callbackContext;
 
@@ -67,12 +75,12 @@ public class SaveImageGallery extends CordovaPlugin {
             } else {
                 Log.d("SaveImageGallery", "Requesting permissions for WRITE_EXTERNAL_STORAGE");
                 PermissionHelper.requestPermission(this, WRITE_PERM_REQUEST_CODE, WRITE_EXTERNAL_STORAGE);
-            }
+            } 
         }
 
         return true;
     }
-
+    
     /**
      * It deletes an image from the given path.
      */
@@ -96,7 +104,7 @@ public class SaveImageGallery extends CordovaPlugin {
         callbackContext.success(filename);
 
     }
-
+    
     /**
      * It saves a Base64 String into an image.
      */
@@ -133,22 +141,24 @@ public class SaveImageGallery extends CordovaPlugin {
         } else {
 
             // Save the image
-            File imageFile = savePhoto(bmp, filePrefix, format, quality);
+            Uri fileUri = savePhoto(bmp, filePrefix, format, quality);
 
-            if (imageFile == null) {
+            if (fileUri == null ) {
                 callbackContext.error("Error while saving image");
             }
 
             // Update image gallery
-            if (mediaScannerEnabled) {
-                scanPhoto(imageFile);
+            if (mediaScannerEnabled && Build.VERSION.SDK_INT < 30) {
+                scanPhoto(fileUri);
             }
 
-            String path = imageFile.toString();
+            String path = fileUri.toString();
 
             if (!path.startsWith("file://")) {
                 path = "file://" + path;
             }
+
+            System.out.println("=============== path"+path);
 
             callbackContext.success(path);
         }
@@ -157,37 +167,42 @@ public class SaveImageGallery extends CordovaPlugin {
     /**
      * Private method to save a {@link Bitmap} into the photo library/temp folder with a format, a prefix and with the given quality.
      */
-    private File savePhoto(Bitmap bmp, String prefix, String format, int quality) {
-        File retVal = null;
+    private Uri savePhoto(Bitmap bmp, String prefix, String format, int quality) {
+        Uri retVal = null;
 
         try {
+            String deviceVersion = Build.VERSION.RELEASE;
             Calendar c = Calendar.getInstance();
             String date = EMPTY_STR + c.get(Calendar.YEAR) + c.get(Calendar.MONTH) + c.get(Calendar.DAY_OF_MONTH)
                     + c.get(Calendar.HOUR_OF_DAY) + c.get(Calendar.MINUTE) + c.get(Calendar.SECOND);
 
+            int check = deviceVersion.compareTo("2.3.3");
+
             File folder;
 
-            if (Build.VERSION.SDK_INT >= 30) {
-                // @see https://developer.android.com/about/versions/11/privacy/storage
-                folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD_MR1) {
+            /*
+             * File path = Environment.getExternalStoragePublicDirectory(
+             * Environment.DIRECTORY_PICTURES ); //this throws error in Android
+             * 2.2
+             */
+            if (check >= 1) {
                 folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                }
+
             } else {
                 folder = Environment.getExternalStorageDirectory();
             }
 
-            if (!folder.exists()) {
-                folder.mkdirs();
-            }
-
             // building the filename
             String fileName = prefix + date;
+            String mimeType = "image/jpeg";
             Bitmap.CompressFormat compressFormat = null;
             // switch for String is not valid for java < 1.6, so we avoid it
-            if (format.equalsIgnoreCase(JPG_FORMAT)) {
-                fileName += ".jpeg";
-                compressFormat = Bitmap.CompressFormat.JPEG;
-            } else if (format.equalsIgnoreCase(PNG_FORMAT)) {
+            if (format.equalsIgnoreCase(PNG_FORMAT)) {
+                mimeType = "image/png";
                 fileName += ".png";
                 compressFormat = Bitmap.CompressFormat.PNG;
             } else {
@@ -195,16 +210,35 @@ public class SaveImageGallery extends CordovaPlugin {
                 fileName += ".jpeg";
                 compressFormat = Bitmap.CompressFormat.JPEG;
             }
-
             // now we create the image in the folder
-            File imageFile = new File(folder, fileName);
-            FileOutputStream out = new FileOutputStream(imageFile);
+            File imageFile = null;
+            Uri uri = null;
+            OutputStream out = null;
+            if(Build.VERSION.SDK_INT >= 30){
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
+                values.put(MediaStore.Images.Media.MIME_TYPE, mimeType);
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+                ContentResolver resolver = cordova.getActivity().getContentResolver();
+                uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                out = resolver.openOutputStream(uri);
+                System.out.println("============== >>>> uri");
+                System.out.println(uri);
+            }else{
+                imageFile = new File(folder, fileName);
+                out = new FileOutputStream(imageFile);
+            }
             // compress it
             bmp.compress(compressFormat, quality, out);
             out.flush();
             out.close();
 
-            retVal = imageFile;
+            if(Build.VERSION.SDK_INT <= 30){
+                retVal = Uri.fromFile(imageFile);
+            }else{
+                retVal = uri;
+            }
+            
 
         } catch (Exception e) {
             Log.e("SaveImageToGallery", "An exception occured while saving image: " + e.toString());
@@ -217,9 +251,8 @@ public class SaveImageGallery extends CordovaPlugin {
      * Invoke the system's media scanner to add your photo to the Media Provider's database,
      * making it available in the Android Gallery application and to other apps.
      */
-    private void scanPhoto(File imageFile) {
+    private void scanPhoto(Uri contentUri) {
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        Uri contentUri = Uri.fromFile(imageFile);
 
         mediaScanIntent.setData(contentUri);
 
@@ -230,6 +263,7 @@ public class SaveImageGallery extends CordovaPlugin {
      * Callback from PermissionHelper.requestPermission method
      */
 	public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+
 		for (int r : grantResults) {
 			if (r == PackageManager.PERMISSION_DENIED) {
 				Log.d("SaveImageGallery", "Permission not granted by the user");
@@ -237,7 +271,7 @@ public class SaveImageGallery extends CordovaPlugin {
 				return;
 			}
 		}
-
+		
 		switch (requestCode) {
 		case WRITE_PERM_REQUEST_CODE:
 			Log.d("SaveImageGallery", "User granted the permission for WRITE_EXTERNAL_STORAGE");

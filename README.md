@@ -4,7 +4,7 @@
 
 This plugin (based on [devgeeks/Canvas2ImagePlugin](http://github.com/devgeeks/Canvas2ImagePlugin)) allows you to save base64 data as a png/jpg image into the device (iOS Photo Library, Android Gallery or WindowsPhone 8 Photo Album).
 
-The plugin is a kind of fork of the [Nexxa/cordova-base64-to-gallery/](http://github.com/Nexxa/cordova-base64-to-gallery) but with a cleaner history and some extra features - like supporting saving into JPG, sending parameters in an easier way, etc.
+The plugin is a kind of fork of the [agomezmoron/cordova-base64-to-gallery/](https://github.com/agomezmoron/cordova-save-image-gallery) adapted to save pictures on android 11
 
 ## Alerts
 
@@ -34,7 +34,7 @@ Saved file name prefix. Only works in Android and WP8.
 **Default**: "img_"
 
 ##### `mediaScanner`
-Android Media Scanner after file creation enabled or not. Only works in Android!
+Android Media Scanner after file creation enabled or not. Only works in Android! In versions below android 10, this parameter is invalid.
 
 **Default**: true
 
