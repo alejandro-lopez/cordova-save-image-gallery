@@ -1,4 +1,4 @@
-package com.agomezmoron.saveImageGallery;
+package com.benj.saveImageGallery;
 import android.content.Context;
 import java.io.File;
 import java.io.OutputStream;
