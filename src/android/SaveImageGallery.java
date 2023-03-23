@@ -63,9 +63,6 @@ public class SaveImageGallery extends CordovaPlugin {
             this.removeImage(args, callbackContext);
         }
         else {
-            System.out.println("===============");
-            System.out.println("SDKVersion 当前系统的SDK版本为：" + Build.VERSION.SDK_INT);
-            System.out.println("======== has permissions WRITE_EXTERNAL_STORAGE" +PermissionHelper.hasPermission(this, WRITE_EXTERNAL_STORAGE));
             this._args = args;
             this._callback = callbackContext;
 
@@ -158,8 +155,6 @@ public class SaveImageGallery extends CordovaPlugin {
                 path = "file://" + path;
             }
 
-            System.out.println("=============== path"+path);
-
             callbackContext.success(path);
         }
     }
@@ -222,8 +217,6 @@ public class SaveImageGallery extends CordovaPlugin {
                 ContentResolver resolver = cordova.getActivity().getContentResolver();
                 uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
                 out = resolver.openOutputStream(uri);
-                System.out.println("============== >>>> uri");
-                System.out.println(uri);
             }else{
                 imageFile = new File(folder, fileName);
                 out = new FileOutputStream(imageFile);
